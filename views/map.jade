@@ -1,0 +1,96 @@
+doctype html
+html(lang='en', ng-app="OverwatchApp")
+  head
+    meta(charset='utf-8')
+    meta(http-equiv='X-UA-Compatible', content='IE=edge')
+    meta(name='viewport', content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no')
+    title Bootstrap 101 Template
+    link(rel='stylesheet', href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css', integrity='sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7', crossorigin='anonymous')
+    link(rel='stylesheet', href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap-theme.min.css', integrity='sha384-fLW2N01lMqjakBkx3l/M9EahuwpSfeNvV63J5ezn3uZzapT0u7EYsXMjQV+0En5r', crossorigin='anonymous')
+    link(rel='stylesheet', href='https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/leaflet.css')
+    style.
+      body {
+        padding: 0;
+        margin: 0;
+      }
+      html, body, #map {
+        height: 100%;
+      }
+    script(src='https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js')
+    script(src='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js', integrity='sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS', crossorigin='anonymous')
+    script(src='https://ajax.googleapis.com/ajax/libs/angularjs/1.4.9/angular.min.js')
+    script(src='https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.5.1/lodash.min.js')
+    script(src='https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/leaflet.js')
+    script(src='//js.pusher.com/3.0/pusher.min.js')
+    script.
+      var app = angular.module('OverwatchApp', [])
+      var pusher = new Pusher('1a3f12df43f8b51a7ea0')
+      var channel
+      var map
+      app.controller('OverwatchController', ['$http', '$scope',
+      function($http, $scope) {
+        $scope.eventId = $('#map').data('id').toString()
+        $scope.userId = 'Overwatch'
+        channel = pusher.subscribe($scope.eventId)
+      }])
+      app.controller('ChatController', ['$http', '$scope',
+      function($http, $scope) {
+        $scope.message = []
+        $http.get('/api/v1/events/' + $scope.eventId).then(function (res) {
+          $scope.messages = res.data.messages.reverse()
+        })
+        channel.bind('message', function (data) {
+          $scope.$apply(function () {
+            $scope.messages.unshift(data)
+          })
+        })
+        $scope.sendMessage = function () {
+          $http.post('/api/v1/events/' + $scope.eventId + '/message', {
+            sender: $scope.userId,
+            message: $scope.message
+          }).then(function () {
+            $scope.message = ""
+          })
+        }
+        $scope.keyPressed = function () {
+          console.log('keypress')
+        }
+      }])
+      function addNewCord (user, loc) {
+        user.locations.push(loc)
+        user.polyline.addLatLng([
+          loc.latitude,
+          loc.longitude
+        ])
+        user.marker.setLatLng([
+          loc.latitude,
+          loc.longitude
+        ])
+      }
+      app.controller('MapController', ['$http', '$scope',
+      function($http, $scope) {
+        $http.get('/api/v1/events/' + $scope.eventId)
+          .then(function (eventData) {
+            $scope.event = eventData.data
+            $scope.map = map = L.map('map').setView([51.505, -0.09], 13)
+            L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
+              attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://mapbox.com">Mapbox</a>',
+              maxZoom: 18,
+              id: 'szekelyszilv.p978pghg',
+              accessToken: 'pk.eyJ1Ijoic3pla2VseXN6aWx2IiwiYSI6ImNpbDV3eHB6ajAwMGF2bm00Yjc1MzJ0bTAifQ.htMEB2D5nzmtH9PnMSWR6w'
+            }).addTo($scope.map)
+            _.forEach($scope.event.users, function (user) {
+              user.polyline = L.polyline([], {color: 'red'}).addTo($scope.map)
+              user.marker = L.marker([0, 0]).addTo($scope.map)
+              user.locations.forEach(function (loc) {
+                addNewCord(user, loc)
+              })
+            })
+            channel.bind('location', function (data) {
+              var user = $scope.event.users[data.sender]
+              addNewCord(user, data)
+            })
+          })
+      }])
+  body(ng-controller='OverwatchController')
+    #map(ng-controller='MapController', data-id=id)

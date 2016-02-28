@@ -33,7 +33,7 @@ function getEvent (id) {
 function joinEvent (eventId, userId, user) {
   if (events[eventId]) {
     user.id = userId
-    user.locations = {}
+    user.locations = []
     events[eventId].users[userId] = user
     return Promise.resolve(user)
   } else {
@@ -76,7 +76,13 @@ function recordLoc (eventId, userId, loc) {
 }
 
 router.get('/', function (req, res) {
-  res.send('alive').end()
+  res.render('overwatch')
+})
+
+router.get('/map/:eventId', function (req, res) {
+  res.render('map', {
+    id: req.params.eventId
+  })
 })
 
 router.post('/clear', function (req, res) {

@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "start": "node_modules/.bin/nodemon ./bin/www"
+    "start": "node_modules/.bin/nodemon -i views ./bin/www"
   },
   "dependencies": {
     "body-parser": "~1.13.2",
