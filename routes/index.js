@@ -85,7 +85,7 @@ router.get('/map/:eventId', function (req, res) {
   })
 })
 
-router.post('/clear', function (req, res) {
+router.get('/clear', function (req, res) {
   events = {}
   res.status(200).end()
 })

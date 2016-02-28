@@ -44,9 +44,6 @@ html(lang='en', ng-app="OverwatchApp")
             $scope.message = ""
           })
         }
-        $scope.keyPressed = function () {
-          console.log('keypress')
-        }
       }])
       function addNewCord (user, loc) {
         user.locations.push(loc)
@@ -74,13 +71,14 @@ html(lang='en', ng-app="OverwatchApp")
             _.forEach($scope.event.users, function (user) {
               user.polyline = L.polyline([], {color: 'red'}).addTo($scope.map)
               user.marker = L.marker([0, 0]).addTo($scope.map)
+              user.marker.bindPopup(user.id)
               user.locations.forEach(function (loc) {
                 addNewCord(user, loc)
               })
             })
             channel.bind('location', function (data) {
               var user = $scope.event.users[data.sender]
-              addNewCord(user, data)
+              addNewCord(user, data.location)
             })
           })
       }])
