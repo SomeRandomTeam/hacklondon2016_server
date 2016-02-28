@@ -116,6 +116,12 @@ router.route('/api/v1/events/:id')
 router.route('/api/v1/events/:id/join')
   .post(function (req, res) {
     joinEvent(req.params.id, req.body.id, req.body)
+      .then(function (user) {
+        return notify(req.params.id, 'user', {
+          id: user.id,
+          user: user
+        })
+      })
       .then(function () {
         res.status(200).json({})
       })
